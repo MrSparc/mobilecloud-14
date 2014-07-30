@@ -2,6 +2,7 @@ package org.magnum.dataup;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.magnum.dataup.model.Video;
 import org.magnum.dataup.model.VideoStatus;
@@ -74,7 +76,7 @@ public class VideoUpController {
 			// Assign an unique ID
 			v.setId(currentId.incrementAndGet());
 			// Assign the data URL
-			v.setLocation(getDataUrl(v.getId()));
+			v.setDataUrl(getDataUrl(v.getId()));
 		}
 	}
 
@@ -126,7 +128,7 @@ public class VideoUpController {
 	 * @return video object or null if doesn't exist
 	 */
 	@RequestMapping(value = VIDEO_PATH, method = RequestMethod.GET)
-	public Video getVideoById(@PathVariable(ID_PARAMETER) long id) {
+	public @ResponseBody Video getVideoById(@PathVariable(ID_PARAMETER) long id) {
 		if (videos.containsKey(id)) {
 			return videos.get(id);
 		} else {
@@ -163,20 +165,43 @@ public class VideoUpController {
 
 		Video v = getVideoById(id);
 		if (v == null) {
-			return new ResponseEntity<VideoStatus>(HttpStatus.BAD_REQUEST);
+			return new ResponseEntity<VideoStatus>(HttpStatus.NOT_FOUND);
 		}
 
 		try {
 			InputStream in = videoData.getInputStream();
 			videoDataMgr.saveVideoData(v, in);
 			in.close();
-			return new ResponseEntity<VideoStatus>(new VideoStatus(
-					VideoStatus.VideoState.READY), HttpStatus.OK);
+			return new ResponseEntity<VideoStatus>(
+					new VideoStatus(VideoStatus.VideoState.READY), 
+					HttpStatus.OK);
 		} catch (IOException e) {
 			return new ResponseEntity<VideoStatus>(
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 
+	}
+	
+	/**
+	 * Returns the video data in streaming
+	 * @param id video identifier
+	 * @param response servlet response to write data streaming
+	 * @throws IOException 
+	 */
+	@RequestMapping(value = VIDEO_DATA_PATH, method = RequestMethod.GET) 
+	public void getVideoData(
+			@PathVariable(ID_PARAMETER) long id, 
+			HttpServletResponse response) throws IOException{
+		
+		Video v = getVideoById(id);
+		if (v == null) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+		} else {
+			response.setContentType(v.getContentType());
+			OutputStream out =  response.getOutputStream();
+			videoDataMgr.copyVideoData(v, out);
+		}
+		
 	}
 
 }
