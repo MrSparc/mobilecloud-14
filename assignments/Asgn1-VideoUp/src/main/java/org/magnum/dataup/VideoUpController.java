@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.magnum.dataup.model.Video;
 import org.magnum.dataup.model.VideoStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -39,18 +40,10 @@ public class VideoUpController {
 
     private static final AtomicLong currentId = new AtomicLong(0L);
     private Map<Long, Video> videos = new HashMap<Long, Video>();
+    
+    @Autowired
     private VideoFileManager videoDataMgr;
-
-    /**
-     * Initializes the videoFileManager in this controller
-     * 
-     * @throws IOException
-     */
-    @PostConstruct
-    public void init() throws IOException {
-	videoDataMgr = VideoFileManager.get();
-    }
-
+    
     /**
      * Saves a video into the server.
      * 
