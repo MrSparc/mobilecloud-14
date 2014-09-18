@@ -1,18 +1,16 @@
-apply plugin: 'java'
-apply plugin: 'eclipse'
 apply plugin: 'war'
 apply plugin: 'jetty'
-
-stopPort = 8081 
-stopKey = 'stopKey'
-
+apply plugin: 'eclipse-wtp'
+ 
 repositories {
-    mavenCentral()
+   mavenCentral()
 }
-
+ 
 dependencies {
-	providedCompile 'javax.servlet:servlet-api:2.5'
-	compile 'org.apache.httpcomponents:httpclient:4.3.4'
-	compile 'org.apache.commons:commons-io:1.3.2'
-	testCompile group: 'junit', name: 'junit', version: '4.+'
+   providedCompile 'javax.servlet:servlet-api:2.5'
+   compile 'org.springframework:spring-webmvc:3.2.2.RELEASE'
+   runtime 'javax.servlet:jstl:1.1.2'
 }
+ 
+/* Change context path (base url). otherwise defaults to name of project */
+jettyRunWar.contextPath = ''tPath = ''
