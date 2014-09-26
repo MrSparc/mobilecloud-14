@@ -34,7 +34,7 @@
 #include "ace/OS_NS_Thread.h"
 
 
-// N
+// Number of threads
 #define POOL_SIZE 5
 #define MAX_TIMEOUT 5
 
@@ -111,17 +111,12 @@ private:
 		size_t length = mb->length();
 
 		ACE_DEBUG((LM_INFO,
-			ACE_TEXT("(thread_id:%t) Message Length %d\n", length)));
-
-		/*if (length > 0)
-			ACE_DEBUG((LM_DEBUG,
-			"(thread_id:%t) Message to process: length = %d, text = \"%*s\"\n",
-			length,
-			length - 1,
-			mb->rd_ptr()));*/
+			"(thread_id:%t) Message Length %d\n", length));
 
 		ACE_OS::memcpy(buf, mb->rd_ptr(), length);
 		mb->release();
+
+		buf[length] = 0;
 
 		ACE_DEBUG((LM_DEBUG,
 			ACE_TEXT("(thread_id:%t) Started processing message %s\n"),
@@ -185,7 +180,7 @@ protected:
 			ACE_Message_Block(recv_cnt),
 			-1);
 
-		ACE_OS::memcpy(mb->wr_ptr(), buf, recv_cnt);
+		mb->copy(buf, recv_cnt);
 
 		// Calls Echo_Task::put(), which uses ACE_Task::putq() to enqueue the message 
 		// for subsequent processing by a thread in the pool of threads that are running the Echo_Task::svc() hook method.  
