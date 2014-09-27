@@ -72,6 +72,11 @@ public:
 		ACE_DEBUG((LM_INFO,
 			ACE_TEXT("(%t) Echo_task::Constructor\n")));
 	}
+	
+	echo_svc_handler( Echo_Svc_Handler *svc)
+	{
+		echo_svc_handler = svc;
+	}
 
 	/// Implement its svc() hook method to perform the "half-sync"
 	virtual int svc(void)
@@ -122,13 +127,7 @@ private:
 			ACE_TEXT("(thread_id:%t) Started processing message %s\n"),
 			buf));
 
-		// ********************************************************************
-	    // TODO: Sends text back to the client the thread id [ACE_OS::thr_self()]
-		// Question: How to access to the ACE_Svc_Handler::peer() method from here
-		// in order to:
-		//
-		// this->peer().send(buf, length);
-		//*********************************************************************
+		echo_svc_handler_->peer().send(buf, length);
 
 		ACE_OS::sleep(3); /// This sleep emulates a long operation
 
@@ -136,6 +135,8 @@ private:
 			ACE_TEXT("(thread_id:%t) Finished processing message %s\n"),
 			buf));
 	}
+	
+	Echo_Svc_Handler *echo_svc_handler_;
 };
 
 
@@ -153,6 +154,7 @@ public:
 
 	void echo_task(Echo_Task *et){
 		echo_task_ = et;
+		echo_task_->echo_svc_handler(this);
 	};
 
 protected:
