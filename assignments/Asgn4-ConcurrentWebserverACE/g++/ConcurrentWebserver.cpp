@@ -72,10 +72,9 @@ public:
   Echo_Task();
   void echo_svc_handler(Echo_Svc_Handler *);
   virtual int svc(void);
-
-private:
   void process_message(ACE_Message_Block *);
 
+private:
   Echo_Svc_Handler *echo_svc_handler_;
 };
 
@@ -118,7 +117,6 @@ private:
 
 
 
-
 Echo_Task::Echo_Task()
 {
   ACE_DEBUG((LM_INFO,
@@ -144,31 +142,31 @@ int Echo_Task::svc(void)
       if (this->getq(mb) == -1)
 	{
 	  ACE_DEBUG((LM_INFO,
-		     ACE_TEXT("(thread_id:%t) Shutting down\n")));
+		     ACE_TEXT("(%t) Shutting down\n")));
 	  break;
 	}
 
       ACE_DEBUG((LM_INFO, 
-		 ACE_TEXT("(thread_id:%t) Call process_message\n")));
+		 ACE_TEXT("(%t) Call process_message\n")));
 
-      // Process the message (sends back the thread_id and original message)
       process_message(mb);
     }
 
   return 0;
 }
 
+/// Process the message (sends back the thread_id and original message)
 void Echo_Task::process_message(ACE_Message_Block *mb)
 {
   ACE_DEBUG((LM_INFO,
-	     ACE_TEXT("(thread_id:%t) Echo_Task::process_message\n")));
+	     ACE_TEXT("(%t) Echo_Task::process_message\n")));
 
   char buf[ACE_DEFAULT_MAX_SOCKET_BUFSIZ];
 
   size_t length = mb->length();
 
   ACE_DEBUG((LM_INFO,
-	     "(thread_id:%t) Message Length %d\n", length));
+	     "(%t) Message Length %d\n", length));
 
   ACE_OS::memcpy(buf, mb->rd_ptr(), length);
   mb->release();
@@ -176,7 +174,7 @@ void Echo_Task::process_message(ACE_Message_Block *mb)
   buf[length] = 0;
 
   ACE_DEBUG((LM_DEBUG,
-	     ACE_TEXT("(thread_id:%t) Started processing message %s\n"),
+	     ACE_TEXT("(%t) Started processing message: %s\n"),
 	     buf));
 
   // Sends back to client the thread-id
@@ -190,24 +188,27 @@ void Echo_Task::process_message(ACE_Message_Block *mb)
   ACE_OS::sleep(3); /// This sleep emulates a long operation
 
   ACE_DEBUG((LM_DEBUG,
-	     ACE_TEXT("(thread_id:%t) Finished processing message %s\n"),
+	     ACE_TEXT("(%t) Finished processing message: %s\n"),
 	     buf));
 }
 	       
 
-
+/// Setter method in order service handler use the thread pool
 void Echo_Svc_Handler::echo_task(Echo_Task *et){
   echo_task_ = et;
-  echo_task_->echo_svc_handler(this);
+
+  // The thread pool also holds a reference this service handler 
+  // in order to send data back to the peer
+  echo_task_->echo_svc_handler(this); 
 }
 
 
 
-//  implement its handle_input() hook method 
+//  Implement its handle_input() hook method to perform the "Half-Async" 
 int Echo_Svc_Handler::handle_input(ACE_HANDLE)
 {
   ACE_DEBUG((LM_DEBUG,
-	     "(thread_id:%t) Echo_Svc_Handler::handle_input\n"));
+	     "(%t) Echo_Svc_Handler::handle_input\n"));
 
 
   // Reads the client data [ACE_SOCK_Stream] until the end of a line is reached
@@ -216,7 +217,7 @@ int Echo_Svc_Handler::handle_input(ACE_HANDLE)
 
   recv_cnt = this->peer().recv(buf, sizeof(buf));
   if (recv_cnt <= 0) {
-    ACE_DEBUG((LM_DEBUG, ACE_TEXT("(% P |% t) connection closed \n")));
+    ACE_DEBUG((LM_DEBUG, ACE_TEXT("(%t) connection closed \n")));
     return -1;
   }
 
@@ -253,7 +254,7 @@ void Echo_Acceptor::echo_task(Echo_Task *et)
 int Echo_Acceptor::make_svc_handler(Echo_Svc_Handler *&sh)
 {
   ACE_DEBUG((LM_DEBUG,
-	     "(thread_id:%t) Echo_Acceptor::make_svc_handler\n"));
+	     "(%t) Echo_Acceptor::make_svc_handler\n"));
 
   if (sh == 0)
     ACE_NEW_RETURN(sh,
@@ -279,7 +280,7 @@ int ACE_TMAIN(int argc, ACE_TCHAR *argv[])
   ACE_INET_Addr addr(port);
 
   ACE_DEBUG((LM_DEBUG,
-	     "(thread_id:%t) Program's entry point\n"));
+	     "(%t) Program's entry point\n"));
 
   ACE_OS::printf("listening at port %d\n", port);
 
